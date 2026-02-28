@@ -5,7 +5,7 @@ import { generateToken } from "../utils/generateToken.js";
 // @route   POST /api/auth/register
 // @access  Public
 export const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, role, phone } = req.body;
+  const { name, email, password, phone, role } = req.body;
 
   if (!name || !email || !password) {
     res.status(400);
@@ -18,16 +18,18 @@ export const registerUser = asyncHandler(async (req, res) => {
     throw new Error("User already exists");
   }
 
-  // Optional: prevent students creating staff roles themselves
-  const safeRole = role && ["warden", "finance", "security", "admin"].includes(role)
-    ? "student"
-    : (role || "student");
+  const allowedRoles = ["student", "warden", "security", "finance", "admin"];
+
+  if (role && !allowedRoles.includes(role)) {
+    res.status(400);
+    throw new Error("Invalid role. Allowed roles: student, warden, security, finance, admin");
+  }
 
   const user = await User.create({
     name,
     email,
     password,
-    role: safeRole,
+    role: role || "student",
     phone,
   });
 
