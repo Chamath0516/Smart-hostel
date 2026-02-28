@@ -18,6 +18,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/qr", qrRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
