@@ -1,4 +1,5 @@
 import asyncHandler from "express-async-handler";
+import mongoose from "mongoose";
 import QRLog from "../models/QRLog.js";
 import User from "../models/User.js";
 
@@ -11,16 +12,57 @@ const getCurfewMinutes = (student) => {
 
 const minutesNow = (date = new Date()) => date.getHours() * 60 + date.getMinutes();
 
-// POST /api/qr/scan  (security only)
+// GET /api/qr/status/:studentId (public)
+export const getStudentQrStatus = asyncHandler(async (req, res) => {
+  const { studentId } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(studentId)) {
+    res.status(404);
+    throw new Error("Student not found");
+  }
+
+  const student = await User.findById(studentId).select("_id role");
+  if (!student || student.role !== "student") {
+    res.status(404);
+    throw new Error("Student not found");
+  }
+
+  const latestLog = await QRLog.findOne({ studentUserId: studentId })
+    .sort({ timestamp: -1 })
+    .select("action timestamp");
+
+  let status = "INSIDE";
+  if (latestLog?.action === "exit") status = "OUTSIDE";
+  if (latestLog?.action === "entry") status = "INSIDE";
+
+  res.json({
+    studentUserId: studentId,
+    status,
+    lastAction: latestLog ? latestLog.action.toUpperCase() : null,
+    lastTime: latestLog ? latestLog.timestamp : null
+  });
+});
+
+// POST /api/qr/scan
 export const logScan = asyncHandler(async (req, res) => {
   const { studentUserId, action, destination, goingHome = false } = req.body;
+  const normalizedAction = String(action || "").toLowerCase();
+  const normalizedDestination = typeof destination === "string" ? destination.trim() : "";
 
-  if (!studentUserId || !action) {
+  if (!studentUserId || !normalizedAction) {
     res.status(400);
     throw new Error("studentUserId and action are required");
   }
+  if (!mongoose.Types.ObjectId.isValid(studentUserId)) {
+    res.status(404);
+    throw new Error("Student not found");
+  }
 
-  if (action === "exit" && !destination) {
+  if (!["entry", "exit"].includes(normalizedAction)) {
+    res.status(400);
+    throw new Error("action must be ENTRY or EXIT");
+  }
+
+  if (normalizedAction === "exit" && !normalizedDestination) {
     res.status(400);
     throw new Error("destination is required for exit");
   }
@@ -35,15 +77,15 @@ export const logScan = asyncHandler(async (req, res) => {
   // Create log
   const log = await QRLog.create({
     studentUserId,
-    action,
-    destination: action === "exit" ? destination : undefined,
+    action: normalizedAction,
+    destination: normalizedAction === "exit" ? normalizedDestination : undefined,
     goingHome,
-    scannedBy: req.user._id
+    scannedBy: req.user?._id
   });
 
   // basic late flag (optional for response)
   let late = false;
-  if (action === "entry") {
+  if (normalizedAction === "entry") {
     const curfew = getCurfewMinutes(student);
     late = !goingHome && minutesNow() > curfew;
   }
