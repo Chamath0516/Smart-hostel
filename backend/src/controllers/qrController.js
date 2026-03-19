@@ -1,5 +1,4 @@
 import asyncHandler from "express-async-handler";
-import mongoose from "mongoose";
 import QRLog from "../models/QRLog.js";
 import User from "../models/User.js";
 
@@ -14,19 +13,19 @@ const minutesNow = (date = new Date()) => date.getHours() * 60 + date.getMinutes
 
 // GET /api/qr/status/:studentId (public)
 export const getStudentQrStatus = asyncHandler(async (req, res) => {
-  const { studentId } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(studentId)) {
-    res.status(404);
-    throw new Error("Student not found");
+  const studentId = String(req.params.studentId || "").trim();
+  if (!studentId) {
+    res.status(400);
+    throw new Error("studentId is required");
   }
 
-  const student = await User.findById(studentId).select("_id role");
+  const student = await User.findOne({ studentId }).select("_id studentId role");
   if (!student || student.role !== "student") {
     res.status(404);
     throw new Error("Student not found");
   }
 
-  const latestLog = await QRLog.findOne({ studentUserId: studentId })
+  const latestLog = await QRLog.findOne({ studentUserId: student._id })
     .sort({ timestamp: -1 })
     .select("action timestamp");
 
@@ -35,7 +34,8 @@ export const getStudentQrStatus = asyncHandler(async (req, res) => {
   if (latestLog?.action === "entry") status = "INSIDE";
 
   res.json({
-    studentUserId: studentId,
+    studentId: student.studentId,
+    studentUserId: student._id,
     status,
     lastAction: latestLog ? latestLog.action.toUpperCase() : null,
     lastTime: latestLog ? latestLog.timestamp : null
@@ -44,17 +44,14 @@ export const getStudentQrStatus = asyncHandler(async (req, res) => {
 
 // POST /api/qr/scan
 export const logScan = asyncHandler(async (req, res) => {
-  const { studentUserId, action, destination, goingHome = false } = req.body;
+  const { studentId, action, destination, goingHome = false } = req.body;
+  const normalizedStudentId = String(studentId || "").trim();
   const normalizedAction = String(action || "").toLowerCase();
   const normalizedDestination = typeof destination === "string" ? destination.trim() : "";
 
-  if (!studentUserId || !normalizedAction) {
+  if (!normalizedStudentId || !normalizedAction) {
     res.status(400);
-    throw new Error("studentUserId and action are required");
-  }
-  if (!mongoose.Types.ObjectId.isValid(studentUserId)) {
-    res.status(404);
-    throw new Error("Student not found");
+    throw new Error("studentId and action are required");
   }
 
   if (!["entry", "exit"].includes(normalizedAction)) {
@@ -68,7 +65,7 @@ export const logScan = asyncHandler(async (req, res) => {
   }
 
   // ensure student exists
-  const student = await User.findById(studentUserId);
+  const student = await User.findOne({ studentId: normalizedStudentId }).select("_id studentId role");
   if (!student || student.role !== "student") {
     res.status(404);
     throw new Error("Student not found");
@@ -76,7 +73,8 @@ export const logScan = asyncHandler(async (req, res) => {
 
   // Create log
   const log = await QRLog.create({
-    studentUserId,
+    studentId: student.studentId,
+    studentUserId: student._id,
     action: normalizedAction,
     destination: normalizedAction === "exit" ? normalizedDestination : undefined,
     goingHome,
@@ -96,38 +94,52 @@ export const logScan = asyncHandler(async (req, res) => {
 // Determine “currently outside” = last action is exit (and not followed by entry)
 export const getOutsideStudents = asyncHandler(async (req, res) => {
   const latest = await QRLog.aggregate([
-    { $sort: { timestamp: -1 } },
+    { $match: { studentUserId: { $exists: true, $ne: null } } },
+    { $sort: { createdAt: -1 } },
     {
       $group: {
         _id: "$studentUserId",
         lastAction: { $first: "$action" },
-        lastTimestamp: { $first: "$timestamp" },
-        lastDestination: { $first: "$destination" },
+        lastExitAt: { $first: "$createdAt" },
+        destination: { $first: "$destination" },
         goingHome: { $first: "$goingHome" }
       }
     },
     { $match: { lastAction: "exit" } }
   ]);
 
-  // populate student basic data
-  const studentIds = latest.map((x) => x._id);
-  const students = await User.find({ _id: { $in: studentIds } }).select("name email phone");
+  const curfewHour = Number.parseInt(process.env.CURFEW_HOUR || "", 10);
+  const curfewMinute = Number.parseInt(process.env.CURFEW_MINUTE || "", 10);
+  const hasEnvCurfew = Number.isInteger(curfewHour) && Number.isInteger(curfewMinute);
+  const curfewMinutes = hasEnvCurfew
+    ? curfewHour * 60 + curfewMinute
+    : getCurfewMinutes();
+  const nowMins = minutesNow();
 
-  // merge
-  const map = new Map(students.map((s) => [String(s._id), s]));
-  const result = latest.map((x) => ({
-    student: map.get(String(x._id)),
-    lastExitAt: x.lastTimestamp,
-    destination: x.lastDestination,
-    goingHome: x.goingHome
+  const studentIds = latest.map((row) => row._id);
+  const students = await User.find({ _id: { $in: studentIds } }).select("name email phone");
+  const studentMap = new Map(
+    students.map((student) => [
+      String(student._id),
+      { name: student.name, email: student.email, phone: student.phone }
+    ])
+  );
+
+  const outside = latest.map((row) => ({
+    student: studentMap.get(String(row._id)) || null,
+    lastExitAt: row.lastExitAt,
+    destination: row.destination,
+    goingHome: row.goingHome,
+    isLate: !row.goingHome && nowMins > curfewMinutes
   }));
 
-  res.json({ outside: result });
+  res.json({ outsideCount: outside.length, outside });
 });
 
 // Late list: outside students + current time past curfew (simple version)
 export const getLateStudents = asyncHandler(async (req, res) => {
   const outsideAgg = await QRLog.aggregate([
+    { $match: { studentUserId: { $exists: true, $ne: null } } },
     { $sort: { timestamp: -1 } },
     { $group: { _id: "$studentUserId", last: { $first: "$$ROOT" } } },
     { $match: { "last.action": "exit", "last.goingHome": false } }

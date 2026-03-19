@@ -1,4 +1,4 @@
-export const allowRoles = (...roles) => {
+export const authorizeRoles = (...roles) => {
   return (req, res, next) => {
     if (!req.user) return res.status(401).json({ message: "Not authorized" });
 
@@ -8,3 +8,6 @@ export const allowRoles = (...roles) => {
     next();
   };
 };
+
+// Backward-compatible alias for existing imports.
+export const allowRoles = authorizeRoles;

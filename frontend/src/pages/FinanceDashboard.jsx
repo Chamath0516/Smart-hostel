@@ -1,12 +1,16 @@
 import { useAuth } from "../context/AuthContext";
+import DashboardLayout from "../components/DashboardLayout";
 
 export default function FinanceDashboard() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Finance Dashboard</h2>
-      <p>Welcome: {user?.name} ({user?.role})</p>
-      <button onClick={logout}>Logout</button>
-    </div>
+    <DashboardLayout title="Finance Manager Dashboard">
+      <section className="dashboard-card">
+        <h2>Welcome, {user?.name || "Finance Manager"}</h2>
+        <p className="dashboard-small-text">Role: {user?.role}</p>
+        <p>This is a temporary finance dashboard for role-based access demo.</p>
+      </section>
+    </DashboardLayout>
   );
 }

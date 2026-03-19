@@ -1,6 +1,6 @@
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
-import { allowRoles } from "../middleware/roleMiddleware.js";
+import { authorizeRoles } from "../middleware/roleMiddleware.js";
 import {
   logScan,
   getStudentQrStatus,
@@ -15,7 +15,7 @@ router.get("/status/:studentId", getStudentQrStatus);
 router.post("/scan", logScan);
 
 // Warden views
-router.get("/outside", protect, allowRoles("warden", "admin"), getOutsideStudents);
-router.get("/late", protect, allowRoles("warden", "admin"), getLateStudents);
+router.get("/outside", protect, authorizeRoles("warden", "security", "admin"), getOutsideStudents);
+router.get("/late", protect, authorizeRoles("warden", "admin"), getLateStudents);
 
 export default router;

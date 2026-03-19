@@ -1,0 +1,21 @@
+.auth-page {
+  min-height: calc(100vh - var(--nav-height) - 56px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 30px;
+}
+
+.auth-card {
+  max-width: 520px;
+}
+
+.auth-card h2 {
+  margin: 0 0 6px;
+  color: var(--color-navy);
+}
+
+.auth-subtitle {
+  margin: 0 0 16px;
+  color: var(--color-muted);
+}

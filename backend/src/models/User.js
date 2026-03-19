@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema(
       default: "student",
     },
     phone: { type: String, trim: true },
+    studentId: { type: String, unique: true, sparse: true, trim: true },
   },
   { timestamps: true }
 );

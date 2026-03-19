@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { getQrStatus, submitQrScan } from "../api/qrPublicApi";
+import Layout from "../components/Layout";
+import Card from "../components/Card";
 import "./QrPublicPage.css";
 
 const initialExitForm = { destination: "", goingHome: false };
@@ -9,6 +11,7 @@ export default function QrPublicPage() {
   const [studentId, setStudentId] = useState("");
   const [status, setStatus] = useState("");
   const [exitForm, setExitForm] = useState(initialExitForm);
+  const [exitSubmitAttempted, setExitSubmitAttempted] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -19,6 +22,7 @@ export default function QrPublicPage() {
     setStudentId("");
     setStatus("");
     setExitForm(initialExitForm);
+    setExitSubmitAttempted(false);
   };
 
   const onContinue = async () => {
@@ -28,12 +32,13 @@ export default function QrPublicPage() {
       return;
     }
 
+    setStudentId(value);
     setLoadingStatus(true);
     setError("");
     setSuccess("");
     try {
       const data = await getQrStatus(value);
-      setStudentId(data.studentUserId);
+      setStudentId(data.studentId || value);
       setStatus(data.status);
     } catch (err) {
       setError(err.message || "Could not fetch student status");
@@ -44,8 +49,8 @@ export default function QrPublicPage() {
 
   const onSubmitExit = async (e) => {
     e.preventDefault();
+    setExitSubmitAttempted(true);
     if (!exitForm.destination.trim()) {
-      setError("Destination is required");
       return;
     }
 
@@ -54,7 +59,7 @@ export default function QrPublicPage() {
     setSuccess("");
     try {
       await submitQrScan({
-        studentUserId: studentId,
+        studentId,
         action: "EXIT",
         destination: exitForm.destination.trim(),
         goingHome: exitForm.goingHome
@@ -74,7 +79,7 @@ export default function QrPublicPage() {
     setSuccess("");
     try {
       await submitQrScan({
-        studentUserId: studentId,
+        studentId,
         action: "ENTRY"
       });
       setSuccess("Arrival recorded successfully.");
@@ -87,75 +92,99 @@ export default function QrPublicPage() {
   };
 
   return (
-    <div className="qr-page">
-      <div className="qr-card">
-        <h1>Hostel Gate QR</h1>
-        <p className="qr-subtitle">Enter your student ID to continue</p>
+    <Layout narrow>
+      <div className="qr-page">
+        <Card className="qr-card">
+          <h1>Hostel Gate QR</h1>
+          <p className="qr-subtitle">Enter your student ID to continue</p>
 
-        {error ? <div className="qr-alert qr-alert-error">{error}</div> : null}
-        {success ? <div className="qr-alert qr-alert-success">{success}</div> : null}
+          {error ? <div className="alert alert-error">{error}</div> : null}
+          {success ? <div className="alert alert-success">{success}</div> : null}
 
-        {!status ? (
-          <div className="qr-step">
-            <label htmlFor="student-id">Student ID</label>
-            <input
-              id="student-id"
-              type="text"
-              value={studentIdInput}
-              onChange={(e) => setStudentIdInput(e.target.value)}
-              placeholder="Enter Student ID"
-            />
-            <button onClick={onContinue} disabled={loadingStatus}>
-              {loadingStatus ? "Checking..." : "Continue"}
-            </button>
-          </div>
-        ) : null}
+          {!status ? (
+            <div className="qr-step">
+              <div className="form-group">
+                <label className="form-label" htmlFor="student-id">
+                  Student ID
+                </label>
+                <input
+                  id="student-id"
+                  className="text-input"
+                  type="text"
+                  value={studentIdInput}
+                  onChange={(e) => setStudentIdInput(e.target.value)}
+                  placeholder="e.g. IT24102141"
+                />
+              </div>
 
-        {status === "INSIDE" ? (
-          <form className="qr-step" onSubmit={onSubmitExit}>
-            <h2>Going Out</h2>
-            <label>Student ID</label>
-            <input value={studentId} readOnly />
+              <button className="btn-primary" onClick={onContinue} disabled={loadingStatus}>
+                {loadingStatus ? "Checking..." : "Continue"}
+              </button>
+            </div>
+          ) : null}
 
-            <label htmlFor="destination">Destination</label>
-            <input
-              id="destination"
-              type="text"
-              value={exitForm.destination}
-              onChange={(e) =>
-                setExitForm((prev) => ({ ...prev, destination: e.target.value }))
-              }
-              placeholder="Where are you going?"
-            />
+          {status === "INSIDE" ? (
+            <form className="qr-step" onSubmit={onSubmitExit}>
+              <h2>Going Out</h2>
 
-            <label className="qr-checkbox">
-              <input
-                type="checkbox"
-                checked={exitForm.goingHome}
-                onChange={(e) =>
-                  setExitForm((prev) => ({ ...prev, goingHome: e.target.checked }))
-                }
-              />
-              Going Home
-            </label>
+              <div className="form-group">
+                <label className="form-label">Student ID</label>
+                <input className="text-input" value={studentId} readOnly />
+              </div>
 
-            <button type="submit" disabled={submitting}>
-              {submitting ? "Submitting..." : "Submit"}
-            </button>
-          </form>
-        ) : null}
+              <div className="form-group">
+                <label className="form-label" htmlFor="destination">
+                  Destination
+                </label>
+                <input
+                  id="destination"
+                  className="text-input"
+                  type="text"
+                  value={exitForm.destination}
+                  onChange={(e) =>
+                    setExitForm((prev) => ({ ...prev, destination: e.target.value }))
+                  }
+                  placeholder="Where are you going?"
+                />
+              </div>
 
-        {status === "OUTSIDE" ? (
-          <div className="qr-step">
-            <h2>Arrived</h2>
-            <label>Student ID</label>
-            <input value={studentId} readOnly />
-            <button onClick={onMarkArrived} disabled={submitting}>
-              {submitting ? "Submitting..." : "Mark Arrived"}
-            </button>
-          </div>
-        ) : null}
+              {exitSubmitAttempted && !exitForm.destination.trim() ? (
+                <div className="alert alert-error">Destination is required</div>
+              ) : null}
+
+              <label className="qr-checkbox">
+                <input
+                  type="checkbox"
+                  checked={exitForm.goingHome}
+                  onChange={(e) =>
+                    setExitForm((prev) => ({ ...prev, goingHome: e.target.checked }))
+                  }
+                />
+                Going Home
+              </label>
+
+              <button className="btn-primary" type="submit" disabled={submitting}>
+                {submitting ? "Submitting..." : "Submit"}
+              </button>
+            </form>
+          ) : null}
+
+          {status === "OUTSIDE" ? (
+            <div className="qr-step">
+              <h2>Arrived</h2>
+
+              <div className="form-group">
+                <label className="form-label">Student ID</label>
+                <input className="text-input" value={studentId} readOnly />
+              </div>
+
+              <button className="btn-primary" onClick={onMarkArrived} disabled={submitting}>
+                {submitting ? "Submitting..." : "Mark Arrived"}
+              </button>
+            </div>
+          ) : null}
+        </Card>
       </div>
-    </div>
+    </Layout>
   );
 }

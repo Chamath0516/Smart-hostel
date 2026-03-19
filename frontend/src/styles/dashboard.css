@@ -1,0 +1,261 @@
+.dashboard-shell {
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.dashboard-nav {
+  background: var(--color-navy);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.dashboard-nav-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dashboard-brand {
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dashboard-brand span {
+  font-size: 0.86rem;
+  color: #dbe7f2;
+}
+
+.dashboard-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-link {
+  color: #f7f5f2;
+  font-size: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+.dashboard-link.active,
+.dashboard-link:hover {
+  color: var(--color-gold);
+  border-color: rgba(250, 185, 91, 0.8);
+}
+
+.dashboard-logout {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-weight: 700;
+  background: var(--color-gold);
+  color: var(--color-navy);
+  cursor: pointer;
+}
+
+.dashboard-cta-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: none;
+  padding: 10px 14px;
+  font-weight: 700;
+  background: var(--color-gold);
+  color: var(--color-navy);
+}
+
+.dashboard-cta-link:hover {
+  filter: brightness(0.96);
+}
+
+.dashboard-main {
+  padding: 20px 14px 30px;
+}
+
+.dashboard-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.dashboard-span-2 {
+  grid-column: span 2;
+}
+
+.dashboard-card {
+  background: #ffffff;
+  border: 1px solid #d7d0c9;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(26, 50, 99, 0.1);
+}
+
+.dashboard-center-card {
+  text-align: center;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dashboard-card h2,
+.dashboard-card h3 {
+  margin: 0 0 8px;
+  color: var(--color-navy);
+}
+
+.dashboard-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.dashboard-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-action-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dashboard-refresh-btn {
+  border: 1px solid var(--color-blue);
+  border-radius: 8px;
+  background: #f3f7fa;
+  color: var(--color-navy);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.dashboard-last-updated {
+  margin: 0 0 8px;
+  color: #4f6378;
+  font-size: 0.9rem;
+}
+
+.dashboard-error {
+  color: #bb1d1d;
+}
+
+.dashboard-small-text {
+  color: #4f6378;
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+}
+
+.dashboard-break-all {
+  word-break: break-all;
+}
+
+.dashboard-table-wrap {
+  overflow-x: auto;
+}
+
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  border: 1px solid #ddd3c9;
+  padding: 8px;
+  text-align: left;
+}
+
+.dashboard-table th {
+  background: #edf3f8;
+  color: var(--color-navy);
+}
+
+.late-row {
+  background: #ffe8e8;
+  color: #8e1111;
+  font-weight: 600;
+}
+
+.late-text {
+  color: #9a1515;
+  font-weight: 600;
+}
+
+.dashboard-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dashboard-qr-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 8px;
+  border: 1px dashed #c3ccd6;
+  border-radius: 10px;
+  width: fit-content;
+  margin: 0 auto 8px;
+}
+
+.add-student-card {
+  max-width: 620px;
+}
+
+.add-student-form {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.add-student-submit {
+  margin-top: 8px;
+}
+
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-span-2 {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-nav-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dashboard-links {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}

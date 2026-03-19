@@ -5,6 +5,7 @@ import { connectDB } from "./config/db.js";
 import qrRoutes from "./routes/qrRoutes.js";
 
 import authRoutes from "./routes/authRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 import seedRoutes from "./routes/seedRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 
@@ -20,6 +21,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/qr", qrRoutes);
 app.use("/api/seed", seedRoutes);
 

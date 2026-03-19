@@ -1,12 +1,17 @@
 import { useAuth } from "../context/AuthContext";
+import DashboardLayout from "../components/DashboardLayout";
+import OutsideMonitor from "../components/OutsideMonitor";
 
 export default function WardenDashboard() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Warden Dashboard</h2>
-      <p>Welcome: {user?.name} ({user?.role})</p>
-      <button onClick={logout}>Logout</button>
-    </div>
+    <DashboardLayout title="Warden Dashboard">
+      <section className="dashboard-card">
+        <h2>Welcome, {user?.name || "Warden"}</h2>
+        <p className="dashboard-small-text">Outside and late student tracking with live refresh.</p>
+      </section>
+      <OutsideMonitor />
+    </DashboardLayout>
   );
 }
