@@ -42,3 +42,12 @@
   font-size: 0.95rem;
   color: var(--color-text);
 }
+
+.qr-card .text-input[id^="security-pin"] {
+  letter-spacing: 0.22em;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-align: center;
+  border: 1px solid var(--color-blue);
+  background: #fffaf1;
+}

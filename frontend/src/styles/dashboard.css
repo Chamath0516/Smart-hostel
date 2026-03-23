@@ -224,6 +224,49 @@
   margin: 0 auto 8px;
 }
 
+.security-pin-card {
+  border-color: rgba(250, 185, 91, 0.65);
+  background: linear-gradient(135deg, #fff7ea 0%, #ffffff 55%, #eef4f8 100%);
+}
+
+.security-pin-help {
+  margin-bottom: 0;
+}
+
+.security-pin-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #1a3263;
+  color: #e8e2db;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.security-pin-value {
+  margin: 10px 0 12px;
+  padding: 18px 20px;
+  border: 2px dashed #547792;
+  border-radius: 16px;
+  background: rgba(232, 226, 219, 0.65);
+  color: #1a3263;
+  font-size: clamp(2.1rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  text-align: center;
+}
+
+.security-pin-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: #4f6378;
+  font-size: 0.95rem;
+}
+
 .add-student-card {
   max-width: 620px;
 }

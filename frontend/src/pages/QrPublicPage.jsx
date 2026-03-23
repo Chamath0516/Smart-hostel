@@ -5,13 +5,16 @@ import Card from "../components/Card";
 import "./QrPublicPage.css";
 
 const initialExitForm = { destination: "", goingHome: false };
+const PIN_REGEX = /^\d{4}$/;
 
 export default function QrPublicPage() {
   const [studentIdInput, setStudentIdInput] = useState("");
   const [studentId, setStudentId] = useState("");
   const [status, setStatus] = useState("");
   const [exitForm, setExitForm] = useState(initialExitForm);
+  const [securityPin, setSecurityPin] = useState("");
   const [exitSubmitAttempted, setExitSubmitAttempted] = useState(false);
+  const [pinSubmitAttempted, setPinSubmitAttempted] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -23,7 +26,11 @@ export default function QrPublicPage() {
     setStatus("");
     setExitForm(initialExitForm);
     setExitSubmitAttempted(false);
+    setSecurityPin("");
+    setPinSubmitAttempted(false);
   };
+
+  const hasValidSecurityPin = PIN_REGEX.test(securityPin);
 
   const onContinue = async () => {
     const value = studentIdInput.trim();
@@ -50,7 +57,11 @@ export default function QrPublicPage() {
   const onSubmitExit = async (e) => {
     e.preventDefault();
     setExitSubmitAttempted(true);
+    setPinSubmitAttempted(true);
     if (!exitForm.destination.trim()) {
+      return;
+    }
+    if (!hasValidSecurityPin) {
       return;
     }
 
@@ -62,7 +73,8 @@ export default function QrPublicPage() {
         studentId,
         action: "EXIT",
         destination: exitForm.destination.trim(),
-        goingHome: exitForm.goingHome
+        goingHome: exitForm.goingHome,
+        securityPin
       });
       setSuccess("Exit scan recorded successfully.");
       resetFlow();
@@ -74,13 +86,19 @@ export default function QrPublicPage() {
   };
 
   const onMarkArrived = async () => {
+    setPinSubmitAttempted(true);
+    if (!hasValidSecurityPin) {
+      return;
+    }
+
     setSubmitting(true);
     setError("");
     setSuccess("");
     try {
       await submitQrScan({
         studentId,
-        action: "ENTRY"
+        action: "ENTRY",
+        securityPin
       });
       setSuccess("Arrival recorded successfully.");
       resetFlow();
@@ -148,8 +166,27 @@ export default function QrPublicPage() {
                 />
               </div>
 
+              <div className="form-group">
+                <label className="form-label" htmlFor="security-pin-exit">
+                  Security PIN
+                </label>
+                <input
+                  id="security-pin-exit"
+                  className="text-input"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={securityPin}
+                  onChange={(e) => setSecurityPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  placeholder="Enter 4-digit PIN"
+                />
+              </div>
+
               {exitSubmitAttempted && !exitForm.destination.trim() ? (
                 <div className="alert alert-error">Destination is required</div>
+              ) : null}
+              {pinSubmitAttempted && !hasValidSecurityPin ? (
+                <div className="alert alert-error">Enter a valid 4-digit security PIN</div>
               ) : null}
 
               <label className="qr-checkbox">
@@ -177,6 +214,26 @@ export default function QrPublicPage() {
                 <label className="form-label">Student ID</label>
                 <input className="text-input" value={studentId} readOnly />
               </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="security-pin-entry">
+                  Security PIN
+                </label>
+                <input
+                  id="security-pin-entry"
+                  className="text-input"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={securityPin}
+                  onChange={(e) => setSecurityPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  placeholder="Enter 4-digit PIN"
+                />
+              </div>
+
+              {pinSubmitAttempted && !hasValidSecurityPin ? (
+                <div className="alert alert-error">Enter a valid 4-digit security PIN</div>
+              ) : null}
 
               <button className="btn-primary" onClick={onMarkArrived} disabled={submitting}>
                 {submitting ? "Submitting..." : "Mark Arrived"}

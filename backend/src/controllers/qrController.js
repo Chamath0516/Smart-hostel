@@ -1,6 +1,7 @@
 import asyncHandler from "express-async-handler";
 import QRLog from "../models/QRLog.js";
 import User from "../models/User.js";
+import { getPinMeta, verifyPin } from "../utils/securityPin.js";
 
 // Helper: compute curfew time (adjust to your rules)
 const getCurfewMinutes = (student) => {
@@ -44,14 +45,25 @@ export const getStudentQrStatus = asyncHandler(async (req, res) => {
 
 // POST /api/qr/scan
 export const logScan = asyncHandler(async (req, res) => {
-  const { studentId, action, destination, goingHome = false } = req.body;
+  const { studentId, action, destination, goingHome = false, securityPin } = req.body;
   const normalizedStudentId = String(studentId || "").trim();
   const normalizedAction = String(action || "").toLowerCase();
   const normalizedDestination = typeof destination === "string" ? destination.trim() : "";
+  const normalizedSecurityPin = String(securityPin || "").trim();
 
   if (!normalizedStudentId || !normalizedAction) {
     res.status(400);
     throw new Error("studentId and action are required");
+  }
+
+  if (!normalizedSecurityPin) {
+    res.status(400);
+    throw new Error("securityPin is required");
+  }
+
+  if (!verifyPin(normalizedSecurityPin)) {
+    res.status(400);
+    throw new Error("Invalid or expired security PIN");
   }
 
   if (!["entry", "exit"].includes(normalizedAction)) {
@@ -91,6 +103,10 @@ export const logScan = asyncHandler(async (req, res) => {
   res.status(201).json({ message: "Scan logged", log, late });
 });
 
+export const getSecurityPin = asyncHandler(async (_req, res) => {
+  res.json(getPinMeta());
+});
+
 // Determine “currently outside” = last action is exit (and not followed by entry)
 export const getOutsideStudents = asyncHandler(async (req, res) => {
   const latest = await QRLog.aggregate([
@@ -117,11 +133,16 @@ export const getOutsideStudents = asyncHandler(async (req, res) => {
   const nowMins = minutesNow();
 
   const studentIds = latest.map((row) => row._id);
-  const students = await User.find({ _id: { $in: studentIds } }).select("name email phone");
+  const students = await User.find({ _id: { $in: studentIds } }).select("name email phone studentId");
   const studentMap = new Map(
     students.map((student) => [
       String(student._id),
-      { name: student.name, email: student.email, phone: student.phone }
+      {
+        name: student.name,
+        email: student.email,
+        phone: student.phone,
+        studentId: student.studentId
+      }
     ])
   );
 

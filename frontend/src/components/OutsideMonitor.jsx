@@ -7,7 +7,9 @@ const CURFEW_MINUTE = 30;
 
 function getStudentKey(student) {
   if (!student) return "";
-  return String(student.email || `${student.name || ""}-${student.phone || ""}`).toLowerCase();
+  return String(
+    student.studentId || student.email || `${student.name || ""}-${student.phone || ""}`
+  ).toLowerCase();
 }
 
 function isLateByCurfew(lastExitAt, goingHome, now = new Date()) {
@@ -139,6 +141,7 @@ export default function OutsideMonitor() {
               <thead>
                 <tr>
                   <th>Name</th>
+                  <th>Student ID</th>
                   <th>Email / Phone</th>
                   <th>Destination</th>
                   <th>Last Exit</th>
@@ -156,6 +159,7 @@ export default function OutsideMonitor() {
                   return (
                     <tr key={`${getStudentKey(student) || "student"}-${index}`} className={isLate ? "late-row" : ""}>
                       <td>{student?.name || "-"}</td>
+                      <td>{student?.studentId || "-"}</td>
                       <td>{student?.email || student?.phone || "-"}</td>
                       <td>{row?.destination || "-"}</td>
                       <td>{row?.lastExitAt ? new Date(row.lastExitAt).toLocaleString() : "-"}</td>
